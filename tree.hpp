@@ -44,29 +44,31 @@ namespace TREE_NAMESPACE__
 	 * This defines the default container type
 	 * that handles the list of children of a node
 	 */
-	template<class T, class container_type = std::list<T> >
+	template<class _Tp, class _Alloc = std::allocator<_Tp>, class container_type = std::list<_Tp, _Alloc> >
 	struct container_type_def
 	{
 		typedef container_type type; //< The container type!
 	};
 	
-	template<typename T>
-	class node: public container_type_def<node<T> >::type
+	template<typename _Tp, typename _Alloc = std::allocator<_Tp> >
+	class node: public container_type_def<node<_Tp, _Alloc>, _Alloc>::type
 	{
 	public:
 		
-		typedef T value_type;
-		typedef node<value_type> node_type;
-		typedef typename container_type_def<node<T> >::type container_type;
+		typedef _Tp value_type;
+		typedef node<value_type, _Alloc> node_type;
+		typedef typename container_type_def<node_type, _Alloc>::type container_type;
 		typedef typename container_type::iterator child_iterator;
 		typedef typename container_type::reverse_iterator reverse_child_iterator;
 		typedef typename container_type::const_iterator const_child_iterator;
 		typedef typename container_type::const_reverse_iterator const_reverse_child_iterator;
 		typedef typename container_type::size_type size_type;
+		typedef typename container_type::allocator_type allocator_type;
+		
 		
 		node(const value_type& data) : data_(data) {}
 		
-		node(const node& other) : container_type(other), data_(other.data_) 
+		node(const node_type& other) : container_type(other), data_(other.data_) 
 		{
 		}
 		
@@ -80,6 +82,16 @@ namespace TREE_NAMESPACE__
 		value_type& data()
 		{
 			return data_;
+		}
+		
+		operator value_type()
+		{
+			return data();
+		}
+		
+		operator const value_type() const
+		{
+			return const_data();
 		}
 		
 		bool operator==(const node_type& other)
@@ -96,14 +108,12 @@ namespace TREE_NAMESPACE__
 		class dfs_iterator: public std::iterator<std::forward_iterator_tag,	value_type>
 		{
 		private:
-			template<class U> friend class node;
+			template<typename T, typename A> friend class node;
 			
 			explicit dfs_iterator(node_type& root)
 			{
 				stack_.push(&root);
 			}
-			
-			
 			
 		public:
 			
@@ -172,7 +182,7 @@ namespace TREE_NAMESPACE__
 		class bfs_iterator: public std::iterator<std::forward_iterator_tag,	value_type>
 		{
 		private:
-			template<class U> friend class node;
+			template<typename T, typename A> friend class node;
 			
 			explicit bfs_iterator(const node_type& root)
 			{
@@ -242,7 +252,7 @@ namespace TREE_NAMESPACE__
 			return bfs_iterator();
 		}
 		
-		bool contains(const value_type& data) const
+		/*bool contains(const value_type& data) const
 		{
 			return std::find(this->begin(), this->end(), data) != this->end();
 		}
@@ -250,7 +260,7 @@ namespace TREE_NAMESPACE__
 		bool contains_recursive(const value_type& data) const
 		{
 			return std::find(bfs_begin(), bfs_end(), data) != bfs_end();
-		}
+		}*/
 		
 		size_type remove_recursive(const value_type& data)
 		{
@@ -271,55 +281,54 @@ namespace TREE_NAMESPACE__
 		value_type data_;
 	};
 	
-	template<class T>
-	bool operator<(const node<T>& a, const node<T>& b)
+	template<class _Tp, class _Alloc>
+	bool operator<(const node<_Tp, _Alloc>& a, const node<_Tp, _Alloc>& b)
 	{
 		return a.const_data() < b.const_data();
 	}
 	
-	template<class T>
-	bool operator==(const node<T>& a, const node<T>& b)
+	template<class _Tp, class _Alloc>
+	bool operator==(const node<_Tp, _Alloc>& a, const node<_Tp, _Alloc>& b)
 	{
 		return a.const_data() == b.const_data();
 	}
 	
-	template<class T>
-	node<T>& operator>>(node<T>& a, node<T>& b)
+	template<class _Tp, class _Alloc>
+	node<_Tp, _Alloc>& operator>>(node<_Tp, _Alloc>& a, node<_Tp, _Alloc>& b)
 	{
 		a.push_back(b);
 		return a.back();
 	}
 	
-	template<class T>
-	node<T>& operator>>(node<T>& a, const T& b)
+	template<class _Tp, class _Alloc>
+	node<_Tp, _Alloc>& operator>>(node<_Tp, _Alloc>& a, const _Tp& b)
 	{
 		a.push_back(b);
 		return a.back();
 	}
 	
-	template<typename T>
-	class tree: public node<T>
+	template<typename _Tp, typename _Alloc = std::allocator<_Tp> >
+	class tree: public node<_Tp, _Alloc>
 	{
 	public:
-		typedef node<T> base_type;
-		typedef node<T> node_type;
+		typedef node<_Tp, _Alloc> base_type;
+		typedef base_type node_type;
 		typedef typename base_type::value_type value_type;
 		
 		tree(const value_type& data) : base_type(data) {}
 	};
 	
-	template<typename T>
-	class graph: public node<typename container_type_def<node<T> >::type>
+	template<typename _Tp, typename _Alloc = std::allocator<_Tp> >
+	class graph: public node<typename container_type_def<node<_Tp, _Alloc>, _Alloc >::type>
 	{
 	public:
 		
-		typedef T value_type;
-		typedef node<value_type> node_type;
-		typedef typename container_type_def<node_type>::type container_type;
+		typedef _Tp value_type;
+		typedef node<value_type, _Alloc> node_type;
+		typedef typename container_type_def<node_type, _Alloc>::type container_type;
 		typedef node<container_type> base_type;
 		
-		graph() :
-		base_type(container_type())
+		graph() : base_type(container_type())
 		{
 		}
 	};
